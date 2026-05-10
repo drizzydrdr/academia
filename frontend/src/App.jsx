@@ -5,6 +5,7 @@ const LangContext = createContext();
 export function useLang() { return useContext(LangContext); }
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:5002/api";
+const BASE = import.meta.env.BASE_URL;
 
 function authFetch(url, token, opts = {}) {
   const headers = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
@@ -189,7 +190,7 @@ export default function App() {
     <div className="layout" dir={lang === "ar" ? "rtl" : "ltr"}>
       <aside className="sidebar">
         <div className="sidebar-brand">
-          <img src="/academia.svg" alt="Academia" className="sidebar-logo" />
+          <img src={`${BASE}academia.svg`} alt="Academia" className="sidebar-logo" />
         </div>
         <div className="sidebar-user">
           <UserAvatar user={user} size={36} />
@@ -452,7 +453,7 @@ function LandingPage({ onEnter }) {
       {/* Navbar */}
       <nav className="landing-nav">
         <div className="landing-nav-brand">
-          <img src="/academia.svg" alt="Academia" style={{height:'50px',width:'auto'}} />
+          <img src={`${BASE}academia.svg`} alt="Academia" style={{height:'50px',width:'auto'}} />
         </div>
         <div className="landing-nav-right">
           <button className="lang-toggle-btn" onClick={toggleLang} title={t.nav.lang}>
@@ -592,7 +593,7 @@ function LandingPage({ onEnter }) {
         <div className="landing-footer-inner">
           <div className="landing-footer-brand">
             <div className="landing-footer-logo">
-              <img src="/academia.svg" alt="Academia" style={{height:'52px',width:'auto'}} />
+              <img src={`${BASE}academia.svg`} alt="Academia" style={{height:'52px',width:'auto'}} />
             </div>
             <p className="landing-footer-tagline">{lp.footerTagline}</p>
             <div className="footer-socials">
@@ -721,7 +722,7 @@ function LoginPage({ onLogin, onBack }) {
         <div className="login-top-row">
           <button className="login-back-btn" onClick={onBack}>{tl.back}</button>
         </div>
-        <img src="/academia.svg" alt="Academia" className="login-logo" />
+        <img src={`${BASE}academia.svg`} alt="Academia" className="login-logo" />
 
         <div className="auth-toggle">
           <button className={mode === "login"    ? "active" : ""} onClick={() => { setMode("login");    setError(""); }}>{tl.loginTab}</button>
