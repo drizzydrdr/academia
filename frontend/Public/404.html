@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Academia</title>
+    <script>
+      // GitHub Pages SPA redirect
+      // Stores the current path then redirects to index.html
+      // index.html reads sessionStorage and restores the route
+      var path = window.location.pathname;
+      var base = '/academia'; // must match your repo name
+      var route = path.replace(base, '') || '/';
+      sessionStorage.setItem('spa_redirect', route + window.location.search);
+      window.location.replace(base + '/');
+    </script>
+  </head>
+  <body></body>
+</html>

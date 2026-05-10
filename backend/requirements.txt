@@ -1,0 +1,8 @@
+Flask==3.0.0
+flask-cors==4.0.0
+flask-jwt-extended==4.5.3
+python-dotenv==1.0.0
+PyPDF2==3.0.1
+python-docx==1.1.0
+openai==0.28
+bcrypt==4.1.2

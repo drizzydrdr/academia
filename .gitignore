@@ -1,0 +1,20 @@
+# Backend
+backend/venv/
+backend/__pycache__/
+backend/*.pyc
+backend/.env
+backend/uploads/
+backend/academic_documents/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env.production
+
+# Database — commit the initial seeded DB, ignore local changes
+# If you want to commit the DB, remove the next line
+# database/*.db
+
+# OS
+.DS_Store
+Thumbs.db
