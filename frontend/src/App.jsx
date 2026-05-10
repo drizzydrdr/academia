@@ -18,6 +18,7 @@ const daysUntil = (d) => Math.ceil((new Date(d) - new Date()) / 86400000);
 function UserAvatar({ user, size = 36, className = "" }) {
   const [imgError, setImgError] = useState(false);
   const initials = `${user?.first_name?.[0] || ""}${user?.last_name?.[0] || ""}`;
+  useEffect(() => { setImgError(false); }, [user?.profile_picture]);
   if (user?.profile_picture && !imgError) {
     return (
       <img
