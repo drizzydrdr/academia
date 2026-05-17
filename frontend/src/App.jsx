@@ -1647,14 +1647,16 @@ function QuizzesView({ isProf, courses, token }) {
                 <div className="quiz-review-q-text">{q.question_text}</div>
                 <div className="quiz-review-options">
                   {["A","B","C","D"].map(opt => {
-                    const isCorrect  = q.correct_option  === opt;
-                    const isStudents = q.student_answer  === opt;
+                    const isCorrect  = (q.correct_option  || "").toUpperCase() === opt;
+                    const isStudents = (q.student_answer  || "").toUpperCase() === opt;
                     return (
                       <div key={opt} className={`quiz-review-option ${isCorrect ? "is-correct" : ""} ${isStudents && !isCorrect ? "is-wrong" : ""}`}>
                         <span className="quiz-option-letter">{opt}</span>
                         <span>{q[`option_${opt.toLowerCase()}`]}</span>
-                        {isCorrect  && <span className="quiz-rev-tag correct-tag">✓ {tq.correctAnswer}</span>}
-                        {isStudents && !isCorrect && <span className="quiz-rev-tag wrong-tag">{tq.yourAnswer}</span>}
+                        <span style={{marginLeft:"auto",display:"flex",gap:"4px",flexShrink:0}}>
+                          {isStudents && <span className={`quiz-rev-tag ${isCorrect ? "correct-tag" : "wrong-tag"}`}>{isCorrect ? "Your Answer ✓" : "Your Answer ✗"}</span>}
+                          {isCorrect && !isStudents && <span className="quiz-rev-tag correct-tag">Correct Answer</span>}
+                        </span>
                       </div>
                     );
                   })}
