@@ -165,7 +165,7 @@ const translations = {
       present: "Present", absent: "Absent", late: "Late",
       rate: "Attendance Rate", attended: "Attended", total: "Total Sessions",
       noRecords: "No attendance records yet",
-      markAttendance: "Mark Attendance", save: "Save Attendance",
+      markAttendance: "Edit Attendance", save: "Mark Attendance",
       student: "Student",
     },
     forum: {
@@ -452,7 +452,7 @@ const translations = {
       present: "حاضر", absent: "غائب", late: "متأخر",
       rate: "نسبة الحضور", attended: "حضر", total: "إجمالي المحاضرات",
       noRecords: "لا توجد سجلات حضور بعد",
-      markAttendance: "تسجيل الحضور", save: "حفظ الحضور",
+      markAttendance: "تعديل الحضور", save: "تسجيل الحضور ",
       student: "الطالب",
     },
     forum: {
