@@ -858,7 +858,7 @@ function Dashboard({ user, isProf, courses, assignments, announcements, quizzesS
         <div className="stat-icon">📋</div>
         <div className="stat-val">
           {n(isProf
-            ? quizzesSummary.reduce((sum, q) => sum + (q.attempt_count || 0), 0)
+            ? quizzesSummary.length
             : quizzesSummary.length, lang)}
         </div>
         <div className="stat-label">{t.assignments.quizSection}</div>
