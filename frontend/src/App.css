@@ -1258,16 +1258,16 @@ body {
   padding: 1rem 1.25rem; cursor: pointer; background: var(--bg); gap: 1rem;
 }
 .sub-card-head:hover { background: var(--navy-l); }
-.sub-student { display: flex; align-items: center; gap: .75rem; }
+.sub-student { display: flex; align-items: center; gap: .75rem; min-width: 0; flex: 1; overflow: hidden; }
 .sub-avatar {
   width: 34px; height: 34px; border-radius: 50%;
   background: var(--navy);
   color: #fff; display: flex; align-items: center; justify-content: center;
   font-weight: 700; font-size: .82rem; flex-shrink: 0;
 }
-.sub-name  { font-weight: 600; font-size: .92rem; }
-.sub-email { font-size: .78rem; color: var(--text-l); }
-.sub-meta  { display: flex; align-items: center; gap: .625rem; flex-shrink: 0; }
+.sub-name  { font-weight: 600; font-size: .92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sub-email { font-size: .78rem; color: var(--text-l); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sub-meta  { display: flex; align-items: center; gap: .625rem; flex-shrink: 0; min-width: fit-content; }
 .sub-date  { font-size: .78rem; color: var(--text-mid); }
 .sub-chevron { color: var(--text-l); font-size: .78rem; }
 .sub-body {
