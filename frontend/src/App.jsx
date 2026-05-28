@@ -816,6 +816,7 @@ function Dashboard({ user, isProf, courses, assignments, announcements, quizzesS
           if (!q.start_time) return true;
           const start = new Date(`${q.quiz_date}T${q.start_time}`);
           const end = new Date(start.getTime() + (q.duration_minutes || 1440) * 60000);
+          const now = new Date();
           return now >= start && now <= end;
         });
         return todayQuizzes.length > 0 && (
