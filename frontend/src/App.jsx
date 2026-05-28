@@ -810,7 +810,14 @@ function Dashboard({ user, isProf, courses, assignments, announcements, quizzesS
 
       {!isProf && (() => {
         const today = new Date().toISOString().slice(0, 10);
-        const todayQuizzes = quizzesSummary.filter(q => q.quiz_date === today && !q.attempt_status);
+        const todayQuizzes = quizzesSummary.filter(q => {
+          if (q.attempt_status) return false;
+          if (q.quiz_date !== today) return false;
+          if (!q.start_time) return true;
+          const start = new Date(`${q.quiz_date}T${q.start_time}`);
+          const end = new Date(start.getTime() + (q.duration_minutes || 1440) * 60000);
+          return now >= start && now <= end;
+        });
         return todayQuizzes.length > 0 && (
           <div className="dash-card wide alert-card danger">
             <h3>Quiz Due Today!</h3>
@@ -1379,6 +1386,25 @@ function AssignmentDetail({ assignment: a, isProf, token, onSubmit, onClose }) {
   );
 }
 
+function QuizTimer({ endTime, onExpire }) {
+  const [remaining, setRemaining] = useState(Math.max(0, endTime - Date.now()));
+  useEffect(() => {
+    const iv = setInterval(() => {
+      const left = Math.max(0, endTime - Date.now());
+      setRemaining(left);
+      if (left === 0) { clearInterval(iv); onExpire(); }
+    }, 1000);
+    return () => clearInterval(iv);
+  }, [endTime]);
+  const mins = Math.floor(remaining / 60000);
+  const secs = Math.floor((remaining % 60000) / 1000);
+  return (
+    <div className={`quiz-timer${remaining < 300000 ? " urgent" : ""}`}>
+      ⏱ {mins}:{String(secs).padStart(2, "0")} remaining
+    </div>
+  );
+}
+
 function QuizzesView({ isProf, courses, token }) {
   const { t } = useLang();
   const tq = t.assignments;
@@ -1412,9 +1438,11 @@ function QuizzesView({ isProf, courses, token }) {
     const body = {
       course_id: fd.get("course_id"), title: fd.get("title"),
       description: fd.get("description"), quiz_date: fd.get("quiz_date"),
+      start_time: fd.get("start_time"),
+      duration_minutes: parseInt(fd.get("duration_minutes")) || null,
       questions,
     };
-    if (!body.course_id || !body.title || !body.quiz_date) return alert("Please fill all required fields.");
+    if (!body.course_id || !body.title || !body.quiz_date || !body.start_time || !body.duration_minutes) return alert("Please fill all required fields.");
     if (questions.some(q => !q.question_text || !q.option_a || !q.option_b || !q.option_c || !q.option_d)) return alert("Please fill in all question fields.");
     const r = await authFetch(`${API}/quizzes`, token, { method:"POST", body: JSON.stringify(body) });
     const d = await r.json();
@@ -1423,11 +1451,15 @@ function QuizzesView({ isProf, courses, token }) {
   };
 
   const openQuiz = async (qz) => {
-    if (qz.quiz_date !== today) return alert(`This quiz is only available on ${fmtDate(qz.quiz_date)}.`);
     if (qz.attempt_status === "submitted") return alert(`You already completed this quiz. Score: ${qz.score}/${qz.question_count}`);
+    const now = new Date();
+    const start = new Date(`${qz.quiz_date}T${qz.start_time || "00:00"}`);
+    const end = new Date(start.getTime() + (qz.duration_minutes || 1440) * 60000);
+    if (now < start) return alert(`This quiz opens at ${qz.start_time} on ${fmtDate(qz.quiz_date)}.`);
+    if (now > end) return alert(`This quiz window has closed.`);
     const r = await authFetch(`${API}/quizzes/${qz.quiz_id}`, token);
     const d = await r.json();
-    if (r.ok) { setAnswers({}); setTakeModal(d); }
+    if (r.ok) { setAnswers({}); setTakeModal({ ...d, quiz_date: qz.quiz_date, start_time: qz.start_time, duration_minutes: qz.duration_minutes }); }
     else alert(d.error || "Cannot open quiz");
   };
 
@@ -1462,7 +1494,7 @@ function QuizzesView({ isProf, courses, token }) {
     const fd = new FormData(e.target);
     const res = await authFetch(`${API}/quizzes/${editQuizModal.quiz_id}`, token, {
       method: "PUT",
-      body: JSON.stringify({ title: fd.get("title"), description: fd.get("description"), quiz_date: fd.get("quiz_date") }),
+      body: JSON.stringify({ title: fd.get("title"), description: fd.get("description"), quiz_date: fd.get("quiz_date"), start_time: fd.get("start_time"), duration_minutes: parseInt(fd.get("duration_minutes")) || null }),
     });
     if (res.ok) { setEditQuizModal(null); load(); }
     else { const d = await res.json(); alert(d.error || "Failed to update"); }
@@ -1476,15 +1508,19 @@ function QuizzesView({ isProf, courses, token }) {
   };
 
   const getStatusBadge = (qz) => {
+    const now = new Date();
+    const start = qz.start_time ? new Date(`${qz.quiz_date}T${qz.start_time}`) : new Date(`${qz.quiz_date}T00:00`);
+    const end = new Date(start.getTime() + (qz.duration_minutes || 1440) * 60000);
+    const isLive = now >= start && now <= end;
     if (isProf) {
-      return qz.quiz_date === today ? <span className="tag warning">Live Today</span>
-           : qz.quiz_date > today  ? <span className="tag info">Upcoming</span>
+      return isLive ? <span className="tag warning">Live Now</span>
+           : qz.quiz_date > today ? <span className="tag info">Upcoming</span>
            : <span className="tag">Past</span>;
     }
     if (qz.attempt_status === "submitted") return <span className="tag success">Scored {qz.score}/{qz.question_count}</span>;
     if (qz.attempt_status === "graded_zero") return <span className="tag danger">Missed — 0/{qz.question_count}</span>;
-    if (qz.quiz_date === today) return <span className="tag warning">Available Now</span>;
-    if (qz.quiz_date > today)  return <span className="tag info">Upcoming</span>;
+    if (isLive) return <span className="tag warning">Available Now</span>;
+    if (qz.quiz_date >= today) return <span className="tag info">Upcoming</span>;
     return <span className="tag">Closed</span>;
   };
 
@@ -1501,13 +1537,18 @@ function QuizzesView({ isProf, courses, token }) {
               <div key={qz.quiz_id} className="quiz-card">
                 <div className="quiz-card-left">
                   <div className="quiz-card-title">{qz.title}</div>
-                  <div className="quiz-card-meta">{qz.course_name} · {qz.question_count} {tq.questions} · {fmtDate(qz.quiz_date)}</div>
+                  <div className="quiz-card-meta">{qz.course_name} · {qz.question_count} {tq.questions} · {fmtDate(qz.quiz_date)}{qz.start_time ? ` at ${qz.start_time}` : ""}{qz.duration_minutes ? ` · ${qz.duration_minutes} min` : ""}</div>
                 </div>
                 <div className="quiz-card-right">
                   {getStatusBadge(qz)}
-                  {!isProf && qz.quiz_date === today && !qz.attempt_status && (
-                    <button className="btn-primary quiz-btn" onClick={() => openQuiz(qz)}>{tq.startQuiz}</button>
-                  )}
+                  {!isProf && (() => {
+                    const now = new Date();
+                    const start = qz.start_time ? new Date(`${qz.quiz_date}T${qz.start_time}`) : new Date(`${qz.quiz_date}T00:00`);
+                    const end = new Date(start.getTime() + (qz.duration_minutes || 1440) * 60000);
+                    return now >= start && now <= end && !qz.attempt_status ? (
+                      <button className="btn-primary quiz-btn" onClick={() => openQuiz(qz)}>{tq.startQuiz}</button>
+                    ) : null;
+                  })()}
                   {!isProf && qz.attempt_status === "submitted" && qz.quiz_date < today && (
                     <button className="btn-secondary quiz-btn" onClick={() => openReview(qz)}>{tq.reviewAnswers || "Review"}</button>
                   )}
@@ -1533,6 +1574,8 @@ function QuizzesView({ isProf, courses, token }) {
             <Field label="Quiz Title *" name="title" defaultValue={editQuizModal.title} required />
             <Field label="Description" name="description" type="textarea" defaultValue={editQuizModal.description} />
             <Field label="Quiz Date *" name="quiz_date" type="date" defaultValue={editQuizModal.quiz_date} required />
+            <Field label="Start Time *" name="start_time" type="time" defaultValue={editQuizModal.start_time} required />
+            <Field label="Duration (minutes) *" name="duration_minutes" type="number" defaultValue={editQuizModal.duration_minutes} placeholder="e.g. 60" required />
             <div className="form-actions">
               <button type="button" className="btn-secondary" onClick={() => setEditQuizModal(null)}>{t.common.cancel}</button>
               <button type="submit" className="btn-primary">{t.common.save}</button>
@@ -1555,6 +1598,8 @@ function QuizzesView({ isProf, courses, token }) {
             <Field label="Quiz Title *" name="title" placeholder="e.g. Chapter 3 Quiz" required />
             <Field label="Description" name="description" type="textarea" placeholder="Optional instructions…" />
             <Field label="Quiz Date *" name="quiz_date" type="date" min={today} required />
+            <Field label="Start Time *" name="start_time" type="time" required />
+            <Field label="Duration (minutes) *" name="duration_minutes" type="number" placeholder="e.g. 60" required />
 
             <div className="quiz-questions-header">
               <span>Questions ({questions.length})</span>
@@ -1600,6 +1645,12 @@ function QuizzesView({ isProf, courses, token }) {
       {/* Take Quiz Modal */}
       {takeModal && (
         <Modal title={takeModal.title} onClose={() => setTakeModal(null)} wide>
+          {takeModal.start_time && takeModal.duration_minutes && (
+            <QuizTimer
+              endTime={new Date(`${takeModal.quiz_date}T${takeModal.start_time}`).getTime() + takeModal.duration_minutes * 60000}
+              onExpire={submitQuiz}
+            />
+          )}
           <div className="quiz-take-meta">{takeModal.course_name} · {takeModal.questions.length} questions · 1 point each</div>
           <div className="quiz-take-questions">
             {takeModal.questions.map((q, i) => (
