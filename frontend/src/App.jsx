@@ -1521,7 +1521,7 @@ function QuizzesView({ isProf, courses, token }) {
     if (qz.attempt_status === "submitted") return <span className="tag success">Scored {qz.score}/{qz.question_count}</span>;
     if (qz.attempt_status === "graded_zero") return <span className="tag danger">Missed — 0/{qz.question_count}</span>;
     if (isLive) return <span className="tag warning">Available Now</span>;
-    if (qz.quiz_date >= today) return <span className="tag info">Upcoming</span>;
+    if (qz.quiz_date > today) return <span className="tag info">Upcoming</span>;
     return <span className="tag">Closed</span>;
   };
 
