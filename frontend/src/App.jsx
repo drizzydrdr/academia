@@ -822,7 +822,7 @@ function Dashboard({ user, isProf, courses, assignments, announcements, quizzesS
         return todayQuizzes.length > 0 && (
           <div className="dash-card wide alert-card danger">
             <h3>Quiz Due Today!</h3>
-            <p>You have {todayQuizzes.length === 1 ? "a quiz" : `${todayQuizzes.length} quizzes`} scheduled for today. Go to <b>Assignments &amp; Quizzes → Quizzes</b> to take {todayQuizzes.length === 1 ? "it" : "them"} now — access locks at midnight.</p>
+            <p>You have {todayQuizzes.length === 1 ? "a quiz" : `${todayQuizzes.length} quizzes`} scheduled for today. Go to <b>Assignments &amp; Quizzes → Quizzes</b> to take {todayQuizzes.length === 1 ? "it" : "them"} now — access locks at {todayQuizzes.length === 1 && todayQuizzes[0].start_time && todayQuizzes[0].duration_minutes ? (() => { const s = new Date(`${todayQuizzes[0].quiz_date}T${todayQuizzes[0].start_time}`); const e = new Date(s.getTime() + todayQuizzes[0].duration_minutes * 60000); return `${e.getHours().toString().padStart(2,'0')}:${e.getMinutes().toString().padStart(2,'0')}`; })() : "midnight"}.</p>
             <div className="stat-row">
               {todayQuizzes.map(q => (
                 <span key={q.quiz_id} className="stat-pill">{q.title} · {q.course_name} · {q.total_points} pts</span>
