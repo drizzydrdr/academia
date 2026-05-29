@@ -167,6 +167,33 @@ body {
   flex-shrink: 0;
 }
 
+.answer-card-body {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.answer-card-main {
+  flex: 1;
+  min-width: 0;
+}
+.accept-btn {
+  flex-shrink: 0;
+  padding: .35rem .85rem;
+  border-radius: 20px;
+  border: 1.5px solid #27ae60;
+  background: transparent;
+  color: #27ae60;
+  font-size: .82rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .2s, color .2s;
+}
+.accept-btn:hover {
+  background: #27ae60;
+  color: #fff;
+}
 /* Bell notification */
 .bell-wrap { position: relative; }
 .bell-btn {
