@@ -2198,7 +2198,7 @@ function QuestionDetail({ question, token, user, onClose }) {
           : full.answers.map(a => (
             <div key={a.answer_id} className={`answer-card ${a.is_accepted ? "accepted" : ""}`}>
               {a.is_accepted && <div className="accepted-badge">{tf.bestAnswer}</div>}
-              <div className="answer-card-body"
+              <div className="answer-card-body">
                 <div className="answer-card-main">
                   <p>{a.answer_text}</p>
                   <span className="q-meta">{a.author_name} ({a.role}) · {fmtDate(a.created_at)}</span>
