@@ -2189,7 +2189,7 @@ function QuestionDetail({ question, token, user, onClose }) {
       <div className="qdetail">
         <div className="qdetail-body">
           <p>{full.question.question_text}</p>
-          <span className="q-meta">by {full.question.author_name} · {fmtDate(full.question.created_at)} · {full.question.views} views</span>
+          <span className="q-meta">by {full.question.author_name} · {fmtDate(full.question.created_at)}
         </div>
 
         <h4 className="answers-head">{full.answers.length} {tf.answers}</h4>
