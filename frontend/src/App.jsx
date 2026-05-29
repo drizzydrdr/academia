@@ -2101,7 +2101,7 @@ function ForumView({ courses, token, user }) {
                     <span className="q-meta">by {q.author_name} · {fmtDate(q.created_at)}</span>
                   </div>
                   <div className="q-right">
-                    {q.is_answered ? <span className="tag success">{tf.bestAnswer}</span> : <span className="tag warning">{tf.question}</span>}
+                    {!!q.is_answered ? <span className="tag success">{tf.bestAnswer}</span> : <span className="tag warning">{tf.question}</span>}
                     <span className="q-answers">{q.answer_count} {tf.answers}</span>
                   </div>
                 </div>
