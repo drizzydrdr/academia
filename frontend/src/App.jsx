@@ -2189,7 +2189,7 @@ function QuestionDetail({ question, token, user, onClose }) {
       <div className="qdetail">
         <div className="qdetail-body">
           <p>{full.question.question_text}</p>
-          <span className="q-meta">by {full.question.author_name} · {fmtDate(full.question.created_at)}
+          <span className="q-meta">by {full.question.author_name} · {fmtDate(full.question.created_at)}</span>
         </div>
 
         <h4 className="answers-head">{full.answers.length} {tf.answers}</h4>
@@ -2198,8 +2198,11 @@ function QuestionDetail({ question, token, user, onClose }) {
           : full.answers.map(a => (
             <div key={a.answer_id} className={`answer-card ${a.is_accepted ? "accepted" : ""}`}>
               {a.is_accepted && <div className="accepted-badge">{tf.bestAnswer}</div>}
-              <p>{a.answer_text}</p>
-              <span className="q-meta">{a.author_name} ({a.role}) · {fmtDate(a.created_at)}</span>
+              <div className="answer-card-body"
+                <div className="answer-card-main">
+                  <p>{a.answer_text}</p>
+                  <span className="q-meta">{a.author_name} ({a.role}) · {fmtDate(a.created_at)}</span>
+                </div>
               {(user.role === 'professor' || user.user_id === full.question.asked_by) && !a.is_accepted && (
                <button className="btn-ghost btn-sm" onClick={async () => {
                  await authFetch(`${API}/forum/answers/${a.answer_id}/accept`, token, { method: 'POST' });
@@ -2208,6 +2211,7 @@ function QuestionDetail({ question, token, user, onClose }) {
                  }}>Mark as Best Answer</button>
               )}
             </div>
+          </div>
           ))
         }
 
