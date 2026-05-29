@@ -2193,24 +2193,27 @@ function QuestionDetail({ question, token, user, onClose }) {
         </div>
 
         <h4 className="answers-head">{full.answers.length} {tf.answers}</h4>
-  : full.answers.map(a => (
-  <div key={a.answer_id} className={`answer-card ${a.is_accepted ? "accepted" : ""}`}>
-    {a.is_accepted && <div className="accepted-badge">{tf.bestAnswer}</div>}
-    <div className="answer-card-body">
-      <div className="answer-card-main">
-        <p>{a.answer_text}</p>
-        <span className="q-meta">{a.author_name} ({a.role}) · {fmtDate(a.created_at)}</span>
-      </div>
-      {(user.role === 'professor' || user.user_id === full.question.asked_by) && !a.is_accepted && (
-        <button className="accept-btn" onClick={async () => {
-          await authFetch(`${API}/forum/answers/${a.answer_id}/accept`, token, { method: 'POST' });
-          authFetch(`${API}/forum/questions/${question.question_id}?track=0`, token)
-            .then(r => r.json()).then(d => setFull(d));
-        }}>✓ Best Answer</button>
-      )}
-    </div>
-  </div>
-))
+        {full.answers.length === 0
+          ? <p className="empty-msg">{tf.noQuestions}</p>
+          : full.answers.map(a => (
+            <div key={a.answer_id} className={`answer-card ${a.is_accepted ? "accepted" : ""}`}>
+              {a.is_accepted && <div className="accepted-badge">{tf.bestAnswer}</div>}
+              <div className="answer-card-body">
+                <div className="answer-card-main">
+                  <p>{a.answer_text}</p>
+                  <span className="q-meta">{a.author_name} ({a.role}) · {fmtDate(a.created_at)}</span>
+                </div>
+                {(user.role === 'professor' || user.user_id === full.question.asked_by) && !a.is_accepted && (
+                  <button className="accept-btn" onClick={async () => {
+                    await authFetch(`${API}/forum/answers/${a.answer_id}/accept`, token, { method: 'POST' });
+                    authFetch(`${API}/forum/questions/${question.question_id}?track=0`, token)
+                      .then(r => r.json()).then(d => setFull(d));
+                  }}>✓ Best Answer</button>
+                )}
+              </div>
+            </div>
+          ))
+        }
 
         <div className="answer-write">
           <h4>{tf.yourAnswer}</h4>
