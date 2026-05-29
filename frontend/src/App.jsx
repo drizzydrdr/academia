@@ -2200,6 +2200,13 @@ function QuestionDetail({ question, token, user, onClose }) {
               {a.is_accepted && <div className="accepted-badge">{tf.bestAnswer}</div>}
               <p>{a.answer_text}</p>
               <span className="q-meta">{a.author_name} ({a.role}) · {fmtDate(a.created_at)}</span>
+              {(user.role === 'professor' || user.user_id === full.question.asked_by) && !a.is_accepted && (
+               <button className="btn-ghost btn-sm" onClick={async () => {
+                 await authFetch(`${API}/forum/answers/${a.answer_id}/accept`, token, { method: 'POST' });
+                 authFetch(`${API}/forum/questions/${question.question_id}?track=0`, token)
+                   .then(r => r.json()).then(d => setFull(d));
+                 }}>Mark as Best Answer</button>
+              )}
             </div>
           ))
         }
