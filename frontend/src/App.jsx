@@ -12,7 +12,7 @@ function authFetch(url, token, opts = {}) {
   return fetch(url, { ...opts, headers });
 }
 
-const fmtDate = (d) => d ? new Date(d).toLocaleDateString() : "—";
+const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-GB') : "—";
 const fmtTime = (d) => d ? new Date(d).toLocaleString() : "—";
 const daysUntil = (d) => Math.ceil((new Date(d) - new Date()) / 86400000);
 
