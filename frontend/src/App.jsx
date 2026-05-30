@@ -2954,7 +2954,8 @@ function GradesView({ courses, token }) {
                       </td>
                       <td>
                         <div className="perf-bar-wrap">
-                          <div className="perf-bar" style={{width:`${s.avg}%`, background: s.avg >= 80 ? '#2e7d32' : s.avg >= 60 ? '#f9a825' : '#c62828'
+                          <div className="perf-bar" style={{width:`${s.avg}%`, background: s.avg >= 80 ? '#2e7d32' : s.avg >= 60 ? '#f9a825' : '#c62828'}} />
+
                         </div>
                       </td>
                     </tr>
