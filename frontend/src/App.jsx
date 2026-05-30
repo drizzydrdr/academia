@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, createContext, useContext } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } from "react";
 import translations, { n } from "./translations";
 
 const LangContext = createContext();
@@ -2836,6 +2836,7 @@ function GradesView({ courses, token }) {
   const tg = t.grades;
   const [grades, setGrades] = useState([]);
   const [courseFilter, setCourseFilter] = useState("");
+  const [viewMode, setViewMode] = useState("student"); // "student" | "raw"
 
   useEffect(() => {
     const url = courseFilter ? `${API}/grades?course_id=${courseFilter}` : `${API}/grades`;
@@ -2845,60 +2846,167 @@ function GradesView({ courses, token }) {
   const pct = (score, max) => max > 0 ? Math.round(score / max * 100) : 0;
   const pctColor = (p) => p >= 80 ? "success" : p >= 60 ? "warning" : "danger";
 
+  // ── Student summary (feature 2) ──────────────────────────────────────────
+  const studentSummary = useMemo(() => {
+    const map = {};
+    grades.forEach(g => {
+      const key = g.student_email;
+      if (!map[key]) map[key] = { name: g.student_name, email: g.student_email, scores: [], course: g.course_name };
+      const p = pct(g.score, g.max_score);
+      map[key].scores.push(p);
+    });
+    return Object.values(map).map(s => ({
+      ...s,
+      avg: Math.round(s.scores.reduce((a, b) => a + b, 0) / s.scores.length),
+      count: s.scores.length,
+    })).sort((a, b) => a.avg - b.avg);
+  }, [grades]);
+
+  // ── Grade distribution (feature 3) ──────────────────────────────────────
+  const distribution = useMemo(() => {
+    const buckets = { A: 0, B: 0, C: 0, D: 0, F: 0 };
+    grades.forEach(g => {
+      const p = pct(g.score, g.max_score);
+      if (p >= 90) buckets.A++;
+      else if (p >= 80) buckets.B++;
+      else if (p >= 70) buckets.C++;
+      else if (p >= 60) buckets.D++;
+      else buckets.F++;
+    });
+    const total = grades.length || 1;
+    return Object.entries(buckets).map(([grade, count]) => ({
+      grade, count, pct: Math.round(count / total * 100)
+    }));
+  }, [grades]);
+
+  const handleExport = () => {
+    const url = courseFilter
+      ? `${API}/grades/export?course_id=${courseFilter}`
+      : `${API}/grades/export`;
+    authFetch(url, token).then(async r => {
+      const blob = await r.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = courseFilter ? 'course_grades.csv' : 'all_grades.csv';
+      a.click();
+    });
+  };
+
   return (
     <div>
-      <div className="view-actions">
+      <div className="view-actions" style={{display:'flex', gap:'0.75rem', flexWrap:'wrap', alignItems:'center'}}>
         <select className="filter-select" value={courseFilter} onChange={e => setCourseFilter(e.target.value)}>
           <option value="">{tg.allCourses}</option>
           {courses.map(c => <option key={c.course_id} value={c.course_id}>{c.course_name}</option>)}
         </select>
+        <div className="toggle-group">
+          <button className={`toggle-btn ${viewMode === 'student' ? 'active' : ''}`} onClick={() => setViewMode('student')}>By Student</button>
+          <button className={`toggle-btn ${viewMode === 'raw' ? 'active' : ''}`} onClick={() => setViewMode('raw')}>All Entries</button>
+        </div>
+        <button className="btn-secondary btn-sm" style={{marginLeft:'auto'}} onClick={handleExport}>Export CSV</button>
       </div>
 
-      {grades.length === 0
-        ? <div className="empty-state">{tg.none}</div>
-        : (
-          <div className="grades-table-wrap">
-            <table className="grades-table">
-              <thead>
-                <tr>
-                  <th>{tg.student}</th>
-                  <th>{tg.type}</th>
-                  <th>{tg.assignment}</th>
-                  <th>{tg.course}</th>
-                  <th>{tg.score}</th>
-                  <th>{tg.date}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {grades.map((g, i) => {
-                  const p = pct(g.score, g.max_score);
-                  const isQuiz = g.entry_type === "quiz";
-                  return (
-                    <tr key={g.grade_id || i}>
+      {grades.length === 0 ? <div className="empty-state">{tg.none}</div> : (
+        <>
+          {/* Grade Distribution Bar */}
+          {grades.length > 0 && (
+            <div className="grade-dist-card">
+              <div className="grade-dist-title">Grade Distribution</div>
+              <div className="grade-dist-bar">
+                {distribution.map(({ grade, count, pct: p }) => p > 0 && (
+                  <div key={grade} className={`grade-dist-seg grade-dist-${grade}`} style={{width:`${p}%`}} title={`${grade}: ${count} (${p}%)`}>
+                    {p >= 8 && <span>{grade} {p}%</span>}
+                  </div>
+                ))}
+              </div>
+              <div className="grade-dist-legend">
+                {distribution.map(({ grade, count }) => (
+                  <span key={grade} className={`grade-dist-item grade-dist-${grade}`}>{grade}: {count}</span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {viewMode === 'student' ? (
+            // Student Summary View
+            <div className="grades-table-wrap">
+              <table className="grades-table">
+                <thead>
+                  <tr>
+                    <th>{tg.student}</th>
+                    <th>{tg.course}</th>
+                    <th>Submissions</th>
+                    <th>Average</th>
+                    <th>Performance</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {studentSummary.map((s, i) => (
+                    <tr key={i}>
                       <td>
-                        <div className="grade-student-name">{g.student_name}</div>
-                        <div className="grade-student-email">{g.student_email}</div>
+                        <div className="grade-student-name">{s.name}</div>
+                        <div className="grade-student-email">{s.email}</div>
+                      </td>
+                      <td><span className="tag info">{s.course}</span></td>
+                      <td>{s.count} graded</td>
+                      <td>
+                        <span className={`tag ${pctColor(s.avg)}`}>{s.avg}%</span>
                       </td>
                       <td>
-                        <span className={`tag ${isQuiz ? "warning" : "info"}`} style={{fontSize:"0.75rem"}}>
-                          {isQuiz ? tg.quiz : tg.assignment_type}
-                        </span>
+                        <div className="perf-bar-wrap">
+                          <div className="perf-bar" style={{width:`${s.avg}%`, background: s.avg >= 80 ? 'var(--success)' : s.avg >= 60 ? 'var(--warn)' : 'var(--danger)'}} />
+                        </div>
                       </td>
-                      <td>{isQuiz ? g.quiz_title : g.assignment_title}</td>
-                      <td><span className="tag info">{g.course_name}</span></td>
-                      <td>
-                        <span className={`tag ${pctColor(p)}`}>{g.score}/{g.max_score}</span>
-                        <span className="grade-pct-small">{p}%</span>
-                      </td>
-                      <td className="grade-date">{fmtDate(g.graded_at)}</td>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )
-      }
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            // Raw entries view (original table)
+            <div className="grades-table-wrap">
+              <table className="grades-table">
+                <thead>
+                  <tr>
+                    <th>{tg.student}</th>
+                    <th>{tg.type}</th>
+                    <th>{tg.assignment}</th>
+                    <th>{tg.course}</th>
+                    <th>{tg.score}</th>
+                    <th>{tg.date}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {grades.map((g, i) => {
+                    const p = pct(g.score, g.max_score);
+                    const isQuiz = g.entry_type === "quiz";
+                    return (
+                      <tr key={g.grade_id || i}>
+                        <td>
+                          <div className="grade-student-name">{g.student_name}</div>
+                          <div className="grade-student-email">{g.student_email}</div>
+                        </td>
+                        <td>
+                          <span className={`tag ${isQuiz ? "warning" : "info"}`} style={{fontSize:"0.75rem"}}>
+                            {isQuiz ? tg.quiz : tg.assignment_type}
+                          </span>
+                        </td>
+                        <td>{isQuiz ? g.quiz_title : g.assignment_title}</td>
+                        <td><span className="tag info">{g.course_name}</span></td>
+                        <td>
+                          <span className={`tag ${pctColor(p)}`}>{g.score}/{g.max_score}</span>
+                          <span className="grade-pct-small">{p}%</span>
+                        </td>
+                        <td className="grade-date">{fmtDate(g.graded_at)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
