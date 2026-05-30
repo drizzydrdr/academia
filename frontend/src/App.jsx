@@ -2356,14 +2356,25 @@ function AIInsightsView({ isProf, token, user, setChatInput, setChatOpen }) {
     }
   };
 
-  const renderNarrative = (text) => {
-    if (!text) return null;
-    return text.split("\n").filter(l => l.trim()).map((line, i) => {
-      const header = line.match(/^\*\*(.+)\*\*$/);
-      if (header) return <h4 key={i} className="report-section-header">{header[1]}</h4>;
-      return <p key={i} className="report-paragraph">{line.trim()}</p>;
-    });
-  };
+const renderNarrative = (text) => {
+  if (!text) return null;
+  return text.split("\n").filter(l => l.trim()).map((line, i) => {
+    const trimmed = line.trim();
+    // full line is a header: **Title**
+    const fullHeader = trimmed.match(/^\*\*(.+?)\*\*$/);
+    if (fullHeader) return <h4 key={i} className="report-section-header">{fullHeader[1]}</h4>;
+    // line starts with bold: **Title** some text...
+    const inlineHeader = trimmed.match(/^\*\*(.+?)\*\*\s+(.+)/);
+    if (inlineHeader) return (
+      <p key={i} className="report-paragraph">
+        <span className="report-section-header" style={{display:'block', marginBottom:'4px'}}>{inlineHeader[1]}</span>
+        {inlineHeader[2]}
+      </p>
+    );
+    // strip any remaining stray asterisks
+    return <p key={i} className="report-paragraph">{trimmed.replace(/\*\*/g, '')}</p>;
+  });
+};
 
   const askFollowUp = (q) => { setChatInput(q); setChatOpen(true); };
 
