@@ -12,7 +12,7 @@ function authFetch(url, token, opts = {}) {
   return fetch(url, { ...opts, headers });
 }
 
-const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-GB') : "—";
+const fmtDate = (d) => d ? new Date(d).toLocaleDateString() : "—";
 const fmtTime = (d) => d ? new Date(d).toLocaleString() : "—";
 const daysUntil = (d) => Math.ceil((new Date(d) - new Date()) / 86400000);
 
@@ -2101,7 +2101,7 @@ function ForumView({ courses, token, user }) {
                     <span className="q-meta">by {q.author_name} · {fmtDate(q.created_at)}</span>
                   </div>
                   <div className="q-right">
-                    {!!q.is_answered ? <span className="tag success">{tf.bestAnswer}</span> : <span className="tag warning">{tf.question}</span>}
+                    {q.is_answered ? <span className="tag success">{tf.bestAnswer}</span> : <span className="tag warning">{tf.question}</span>}
                     <span className="q-answers">{q.answer_count} {tf.answers}</span>
                   </div>
                 </div>
@@ -2196,14 +2196,14 @@ function QuestionDetail({ question, token, user, onClose }) {
         {full.answers.length === 0
           ? <p className="empty-msg">{tf.noQuestions}</p>
           : full.answers.map(a => (
-            <div key={a.answer_id} className={`answer-card ${!!a.is_accepted ? "accepted" : ""}`}>
-              {!!a.is_accepted && <div className="accepted-badge">{tf.bestAnswer}</div>}
+            <div key={a.answer_id} className={`answer-card ${a.is_accepted ? "accepted" : ""}`}>
+              {a.is_accepted && <div className="accepted-badge">{tf.bestAnswer}</div>}
               <div className="answer-card-body">
                 <div className="answer-card-main">
                   <p>{a.answer_text}</p>
                   <span className="q-meta">{a.author_name} ({a.role}) · {fmtDate(a.created_at)}</span>
                 </div>
-                {(user.role === 'professor' || user.user_id === full.question.asked_by) && a.is_accepted !== 1 && (
+                {(user.role === 'professor' || user.user_id === full.question.asked_by) && !a.is_accepted && (
                   <button className="accept-btn" onClick={async () => {
                     await authFetch(`${API}/forum/answers/${a.answer_id}/accept`, token, { method: 'POST' });
                     authFetch(`${API}/forum/questions/${question.question_id}?track=0`, token)
@@ -2356,25 +2356,14 @@ function AIInsightsView({ isProf, token, user, setChatInput, setChatOpen }) {
     }
   };
 
-const renderNarrative = (text) => {
-  if (!text) return null;
-  return text.split("\n").filter(l => l.trim()).map((line, i) => {
-    const trimmed = line.trim();
-    // full line is a header: **Title**
-    const fullHeader = trimmed.match(/^\*\*(.+?)\*\*$/);
-    if (fullHeader) return <h4 key={i} className="report-section-header">{fullHeader[1]}</h4>;
-    // line starts with bold: **Title** some text...
-    const inlineHeader = trimmed.match(/^\*\*(.+?)\*\*\s+(.+)/);
-    if (inlineHeader) return (
-      <p key={i} className="report-paragraph">
-        <span className="report-section-header" style={{display:'block', marginBottom:'4px'}}>{inlineHeader[1]}</span>
-        {inlineHeader[2]}
-      </p>
-    );
-    // strip any remaining stray asterisks
-    return <p key={i} className="report-paragraph">{trimmed.replace(/\*\*/g, '')}</p>;
-  });
-};
+  const renderNarrative = (text) => {
+    if (!text) return null;
+    return text.split("\n").filter(l => l.trim()).map((line, i) => {
+      const header = line.match(/^\*\*(.+)\*\*$/);
+      if (header) return <h4 key={i} className="report-section-header">{header[1]}</h4>;
+      return <p key={i} className="report-paragraph">{line.trim()}</p>;
+    });
+  };
 
   const askFollowUp = (q) => { setChatInput(q); setChatOpen(true); };
 
@@ -3009,11 +2998,14 @@ function AnalyticsView({ isProf, token }) {
                   <h3 className="student-name">{s.name}</h3>
                   <p className="student-email">{s.email}</p>
                   <p className="student-email" style={{color:"var(--mid)"}}>{s.course}</p>
-                  <div className="student-metrics">
-                    <span className="metric metric-warn">{n(s.attendance, lang)}% {tana.attendance}</span>
+                  <div className="signal-pills">
+                    {s.signals && s.signals.map((sig, j) => (
+                      <span key={j} className={`signal-pill signal-${sig.level}`}>
+                        {sig.label}: {sig.value}
+                      </span>
+                    ))}
                   </div>
-                  <p style={{fontSize:"0.8rem",color:"var(--danger)",margin:"0.4rem 0 0.6rem"}}>{s.reason}</p>
-                  <button className="btn-secondary btn-sm" onClick={() => alert(`Contact: ${s.email}`)}>
+                  <button className="btn-secondary btn-sm" style={{marginTop:"0.6rem"}} onClick={() => alert(`Contact: ${s.email}`)}>
                     {tana.contactStudent}
                   </button>
                 </div>
@@ -3032,11 +3024,14 @@ function AnalyticsView({ isProf, token }) {
                   <h3 className="student-name">{s.name}</h3>
                   <p className="student-email">{s.email}</p>
                   <p className="student-email" style={{color:"var(--mid)"}}>{s.course}</p>
-                  <div className="student-metrics">
-                    <span className="metric metric-warn">{n(s.attendance, lang)}% {tana.attendance}</span>
+                  <div className="signal-pills">
+                    {s.signals && s.signals.map((sig, j) => (
+                      <span key={j} className={`signal-pill signal-${sig.level}`}>
+                        {sig.label}: {sig.value}
+                      </span>
+                    ))}
                   </div>
-                  <p style={{fontSize:"0.8rem",color:"var(--warn)",margin:"0.4rem 0 0.6rem"}}>{s.reason}</p>
-                  <button className="btn-secondary btn-sm" onClick={() => alert(`Contact: ${s.email}`)}>
+                  <button className="btn-secondary btn-sm" style={{marginTop:"0.6rem"}} onClick={() => alert(`Contact: ${s.email}`)}>
                     {tana.contactStudent}
                   </button>
                 </div>
