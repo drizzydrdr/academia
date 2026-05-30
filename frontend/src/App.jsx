@@ -11,8 +11,7 @@ function authFetch(url, token, opts = {}) {
   const headers = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
   return fetch(url, { ...opts, headers });
 }
-
-const fmtDate = (d) => d ? new Date(d).toLocaleDateString() : "—";
+const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-GB') : "—";
 const fmtTime = (d) => d ? new Date(d).toLocaleString() : "—";
 const daysUntil = (d) => Math.ceil((new Date(d) - new Date()) / 86400000);
 
@@ -2196,14 +2195,14 @@ function QuestionDetail({ question, token, user, onClose }) {
         {full.answers.length === 0
           ? <p className="empty-msg">{tf.noQuestions}</p>
           : full.answers.map(a => (
-            <div key={a.answer_id} className={`answer-card ${a.is_accepted ? "accepted" : ""}`}>
-              {a.is_accepted && <div className="accepted-badge">{tf.bestAnswer}</div>}
+            <div key={a.answer_id} className={`answer-card ${!!a.is_accepted ? "accepted" : ""}`}>
+              {!!a.is_accepted && <div className="accepted-badge">{tf.bestAnswer}</div>}
               <div className="answer-card-body">
                 <div className="answer-card-main">
                   <p>{a.answer_text}</p>
                   <span className="q-meta">{a.author_name} ({a.role}) · {fmtDate(a.created_at)}</span>
                 </div>
-                {(user.role === 'professor' || user.user_id === full.question.asked_by) && !a.is_accepted && (
+                {(user.role === 'professor' || user.user_id === full.question.asked_by) && !!(a.is_accepted === 0) && (
                   <button className="accept-btn" onClick={async () => {
                     await authFetch(`${API}/forum/answers/${a.answer_id}/accept`, token, { method: 'POST' });
                     authFetch(`${API}/forum/questions/${question.question_id}?track=0`, token)
@@ -2356,14 +2355,25 @@ function AIInsightsView({ isProf, token, user, setChatInput, setChatOpen }) {
     }
   };
 
-  const renderNarrative = (text) => {
-    if (!text) return null;
-    return text.split("\n").filter(l => l.trim()).map((line, i) => {
-      const header = line.match(/^\*\*(.+)\*\*$/);
-      if (header) return <h4 key={i} className="report-section-header">{header[1]}</h4>;
-      return <p key={i} className="report-paragraph">{line.trim()}</p>;
-    });
-  };
+const renderNarrative = (text) => {
+  if (!text) return null;
+  return text.split("\n").filter(l => l.trim()).map((line, i) => {
+    const trimmed = line.trim();
+    // full line is a header: **Title**
+    const fullHeader = trimmed.match(/^\*\*(.+?)\*\*$/);
+    if (fullHeader) return <h4 key={i} className="report-section-header">{fullHeader[1]}</h4>;
+    // line starts with bold: **Title** some text...
+    const inlineHeader = trimmed.match(/^\*\*(.+?)\*\*\s+(.+)/);
+    if (inlineHeader) return (
+      <p key={i} className="report-paragraph">
+        <span className="report-section-header" style={{display:'block', marginBottom:'4px'}}>{inlineHeader[1]}</span>
+        {inlineHeader[2]}
+      </p>
+    );
+    // strip any remaining stray asterisks
+    return <p key={i} className="report-paragraph">{trimmed.replace(/\*\*/g, '')}</p>;
+  });
+};
 
   const askFollowUp = (q) => { setChatInput(q); setChatOpen(true); };
 
