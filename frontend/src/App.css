@@ -2042,6 +2042,22 @@ body {
   .profile-full-name { font-size: 1.4rem; }
 }
 
+.signal-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+  margin-top: .5rem;
+}
+.signal-pill {
+  font-size: .75rem;
+  font-weight: 600;
+  padding: .2rem .6rem;
+  border-radius: 20px;
+}
+.signal-ok      { background: #e8f5e9; color: #2e7d32; }
+.signal-warning { background: #fff8e1; color: #f57f17; }
+.signal-danger  { background: #fdecea; color: #c62828; }
+
 /* Resource file type badge */
 .resource-type-badge {
   display: inline-block;
